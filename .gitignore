@@ -12,3 +12,5 @@ pddoc-csharp.settings.json
 *.pdb
 *.user
 *.suo
+
+pddoc.py
