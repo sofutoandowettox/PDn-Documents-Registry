@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>PDnDocuments.Wpf</AssemblyName>
+    <RootNamespace>PDnDocuments.Wpf</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Models.cs" Link="Shared\Models.cs" />
+    <Compile Include="..\WorkspaceStore.cs" Link="Shared\WorkspaceStore.cs" />
+  </ItemGroup>
+
+</Project>

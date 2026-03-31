@@ -1,0 +1,99 @@
+<Window x:Class="PDnDocuments.Wpf.MessageDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Сообщение"
+        Width="520"
+        ResizeMode="NoResize"
+        SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent">
+    <Border Background="#22000000"
+            CornerRadius="30"
+            Padding="1">
+        <Border Background="{StaticResource SurfaceCardBrush}"
+                BorderBrush="{StaticResource StrokeStrongBrush}"
+                BorderThickness="1"
+                CornerRadius="28"
+                Padding="24">
+            <StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border x:Name="HeroBorder"
+                            Width="56"
+                            Height="56"
+                            Background="#20C8AEFF"
+                            BorderBrush="{StaticResource StrokeStrongBrush}"
+                            BorderThickness="1"
+                            CornerRadius="18"
+                            VerticalAlignment="Top">
+                        <TextBlock x:Name="HeroGlyphTextBlock"
+                                   Text="?"
+                                   FontSize="24"
+                                   FontWeight="Bold"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   Foreground="{StaticResource AccentBrush}" />
+                    </Border>
+
+                    <StackPanel Grid.Column="2">
+                        <TextBlock x:Name="BadgeTextBlock"
+                                   FontSize="12"
+                                   FontWeight="Bold"
+                                   Foreground="{StaticResource AccentBrush}"
+                                   Opacity="0.9" />
+
+                        <TextBlock x:Name="TitleTextBlock"
+                                   Margin="0,10,0,0"
+                                   FontSize="24"
+                                   FontWeight="Bold"
+                                   Foreground="{StaticResource TextBrush}" />
+                        <TextBlock Text="Проверьте действие перед продолжением."
+                                   Margin="0,6,0,0"
+                                   Style="{StaticResource MutedLabelStyle}" />
+                    </StackPanel>
+                </Grid>
+
+                <Border x:Name="MessagePanelBorder"
+                        Margin="0,22,0,0"
+                        Background="{StaticResource SurfaceElevatedBrush}"
+                        BorderBrush="{StaticResource StrokeBrush}"
+                        BorderThickness="1"
+                        CornerRadius="18"
+                        Padding="16">
+                    <TextBlock x:Name="MessageTextBlock"
+                               TextWrapping="Wrap"
+                               Foreground="{StaticResource TextSoftBrush}" />
+                </Border>
+
+                <Grid Margin="0,24,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Button x:Name="CancelButton"
+                            Grid.Column="0"
+                            Content="Отмена"
+                            IsCancel="True"
+                            Style="{StaticResource SoftButtonStyle}"
+                            Click="CancelButton_Click" />
+                    <Button x:Name="ConfirmButton"
+                            Grid.Column="2"
+                            Content="Ок"
+                            IsDefault="True"
+                            Style="{StaticResource SolidButtonStyle}"
+                            Click="ConfirmButton_Click" />
+                </Grid>
+            </StackPanel>
+        </Border>
+    </Border>
+</Window>

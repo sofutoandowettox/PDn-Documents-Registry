@@ -1,0 +1,14 @@
+build/
+build-self-contained/
+Wpf/bin/
+Wpf/obj/
+
+.pddoc-store
+.pddoc-store.*
+pddoc-csharp.settings.json
+*.bak
+*.zip
+*.log
+*.pdb
+*.user
+*.suo

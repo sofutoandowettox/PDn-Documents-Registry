@@ -1,0 +1,1174 @@
+<Window x:Class="PDnDocuments.Wpf.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Система управления документами"
+        Width="1500"
+        Height="940"
+        MinWidth="1320"
+        MinHeight="860"
+        WindowStartupLocation="CenterScreen">
+    <DockPanel Background="{StaticResource SurfaceAppBrush}">
+        <Border DockPanel.Dock="Top"
+                Background="{StaticResource SurfaceCardBrush}"
+                BorderBrush="#10FFFFFF"
+                BorderThickness="0,0,0,1"
+                Padding="14,10,14,10">
+            <Menu>
+                <MenuItem Header="Файл">
+                    <MenuItem Header="Создать резервную копию" Click="CreateBackup_Click" />
+                    <MenuItem Header="Восстановить из копии" Click="RestoreBackup_Click" />
+                    <MenuItem Header="Очистить временные файлы" Click="ClearTempFiles_Click" />
+                </MenuItem>
+                <MenuItem Header="Папка">
+                    <MenuItem Header="Сменить рабочую папку" Click="ChangeWorkspaceFolder_Click" />
+                    <MenuItem Header="Открыть рабочую папку" Click="OpenWorkspaceFolder_Click" />
+                    <Separator />
+                    <MenuItem Header="Экспорт документов в CSV" Click="ExportDocuments_Click" />
+                </MenuItem>
+            </Menu>
+        </Border>
+
+        <StatusBar DockPanel.Dock="Bottom">
+            <StatusBarItem>
+                <TextBlock x:Name="ActionStatusTextBlock" />
+            </StatusBarItem>
+        </StatusBar>
+
+        <Grid Margin="20">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition x:Name="SidebarColumn" Width="216" />
+                <ColumnDefinition x:Name="SidebarGapColumn" Width="16" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition x:Name="RightGapColumn" Width="16" />
+                <ColumnDefinition x:Name="RightPanelColumn" Width="430" />
+            </Grid.ColumnDefinitions>
+
+            <Border x:Name="SidebarBorder" Grid.Column="0" Style="{StaticResource SidebarCardStyle}" Padding="16">
+                <StackPanel>
+                    <Button x:Name="DashboardNavButton" Content="Дашборд" Style="{StaticResource NavButtonStyle}" Margin="0,0,0,8" Click="NavButton_Click" Tag="dashboard" />
+                    <Button x:Name="AttentionNavButton" Content="Требует внимания" Style="{StaticResource NavButtonStyle}" Margin="0,0,0,8" Click="NavButton_Click" Tag="attention" />
+                    <Button x:Name="DocumentsNavButton" Content="Документы" Style="{StaticResource NavButtonStyle}" Margin="0,0,0,8" Click="NavButton_Click" Tag="documents" />
+                    <Button x:Name="SopdNavButton" Content="СОПД" Style="{StaticResource NavButtonStyle}" Margin="0,0,0,8" Click="NavButton_Click" Tag="sopd" />
+                    <Button x:Name="SettingsNavButton" Content="Компании и разделы" Style="{StaticResource NavButtonStyle}" Margin="0,0,0,8" Click="NavButton_Click" Tag="settings" />
+                </StackPanel>
+            </Border>
+
+            <Grid Grid.Column="2">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <Border Grid.Row="0" Style="{StaticResource PanelBorderStyle}" Padding="22,20,22,18">
+                    <StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="16" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <Button x:Name="SidebarToggleButton"
+                                    Grid.Column="0"
+                                    Style="{StaticResource IconButtonStyle}"
+                                    Click="SidebarToggleButton_Click"
+                                    VerticalAlignment="Top"
+                                    ToolTip="Скрыть меню">
+                                <TextBlock Text="&#xE700;"
+                                           FontFamily="Segoe Fluent Icons"
+                                           FontSize="14"
+                                           VerticalAlignment="Center"
+                                           HorizontalAlignment="Center" />
+                            </Button>
+
+                            <StackPanel Grid.Column="2">
+                                <TextBlock x:Name="PageTitleTextBlock"
+                                           FontSize="28"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource TextBrush}" />
+                                <TextBlock x:Name="PageSubtitleTextBlock"
+                                           Margin="0,4,0,0"
+                                           TextWrapping="Wrap"
+                                           Style="{StaticResource MutedLabelStyle}" />
+                            </StackPanel>
+
+                            <Button x:Name="PrimaryActionButton"
+                                    Grid.Column="3"
+                                    MinWidth="176"
+                                    Style="{StaticResource SolidButtonStyle}"
+                                    Click="PrimaryActionButton_Click"
+                                    VerticalAlignment="Top" />
+                        </Grid>
+
+                        <Border x:Name="FilterBarBorder"
+                                Background="{StaticResource SurfaceSoftBrush}"
+                                BorderBrush="{StaticResource StrokeBrush}"
+                                BorderThickness="1"
+                                CornerRadius="20"
+                                Padding="14"
+                                Margin="0,14,0,0">
+                            <StackPanel>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="12" />
+                                        <ColumnDefinition Width="180" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid Grid.Column="0">
+                                        <TextBox x:Name="SearchTextBox"
+                                                 Style="{StaticResource FieldTextBoxStyle}"
+                                                 TextChanged="DocumentFilter_Changed" />
+                                        <TextBlock x:Name="SearchPlaceholderTextBlock"
+                                                   Text="Найти документ, компанию или раздел"
+                                                   Margin="16,0,48,0"
+                                                   VerticalAlignment="Center"
+                                                   IsHitTestVisible="False"
+                                                   Foreground="{StaticResource MutedDisabledBrush}">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Text, ElementName=SearchTextBox}" Value="">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Grid>
+                                    <Button x:Name="ResetFiltersButton"
+                                            Grid.Column="2"
+                                            Content="Сбросить фильтры"
+                                            Style="{StaticResource SoftButtonStyle}"
+                                            Click="ResetFiltersButton_Click" />
+                                </Grid>
+
+                                <Grid x:Name="FilterOptionsGrid" Margin="0,10,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="2*" />
+                                        <ColumnDefinition Width="14" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="14" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="14" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <ComboBox x:Name="CompanyFilterComboBox"
+                                              Grid.Column="0"
+                                              Style="{StaticResource FieldComboBoxStyle}"
+                                              SelectionChanged="DocumentFilter_Changed" />
+                                    <ComboBox x:Name="StatusFilterComboBox"
+                                              Grid.Column="2"
+                                              Style="{StaticResource FieldComboBoxStyle}"
+                                              SelectionChanged="DocumentFilter_Changed" />
+                                    <ComboBox x:Name="SectionFilterComboBox"
+                                              Grid.Column="4"
+                                              Style="{StaticResource FieldComboBoxStyle}"
+                                              SelectionChanged="DocumentFilter_Changed" />
+                                    <ComboBox x:Name="ProblemFilterComboBox"
+                                              Grid.Column="6"
+                                              Style="{StaticResource FieldComboBoxStyle}"
+                                              SelectionChanged="DocumentFilter_Changed" />
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <Grid Grid.Row="1" Margin="0,16,0,0">
+                    <ScrollViewer x:Name="DashboardPage" VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="0,8,0,0">
+                            <TextBlock Text="Статистика"
+                                       FontSize="18"
+                                       FontWeight="Bold"
+                                       Foreground="{StaticResource TextBrush}" />
+                            <TextBlock Text="Сейчас"
+                                       Margin="0,22,0,0"
+                                       FontSize="15"
+                                       FontWeight="Bold"
+                                       Foreground="{StaticResource TextBrush}" />
+
+                            <Grid Margin="0,24,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="30" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="30" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="30" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0" HorizontalAlignment="Center" Width="210">
+                                    <TextBlock Text="Всего документов"
+                                               FontWeight="Bold"
+                                               TextAlignment="Center"
+                                               Style="{StaticResource MutedLabelStyle}" />
+                                    <TextBlock x:Name="DashboardModernDocsMetricTextBlock"
+                                                Margin="0,18,0,0"
+                                                FontSize="40"
+                                                FontWeight="Bold"
+                                                TextAlignment="Center"
+                                                Foreground="#FFC8AEFF" />
+                                    <TextBlock x:Name="DashboardModernDocsNoteTextBlock"
+                                                Margin="0,10,0,0"
+                                                TextAlignment="Center"
+                                                TextWrapping="Wrap"
+                                                Foreground="{StaticResource TextSoftBrush}" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2" HorizontalAlignment="Center" Width="210">
+                                    <TextBlock Text="Без файла"
+                                               FontWeight="Bold"
+                                               TextAlignment="Center"
+                                               Style="{StaticResource MutedLabelStyle}" />
+                                    <TextBlock x:Name="DashboardModernMissingMetricTextBlock"
+                                                Margin="0,18,0,0"
+                                                FontSize="40"
+                                                FontWeight="Bold"
+                                                TextAlignment="Center"
+                                                Foreground="#FFFF9FB0" />
+                                    <TextBlock x:Name="DashboardModernMissingNoteTextBlock"
+                                                Margin="0,10,0,0"
+                                                TextAlignment="Center"
+                                                TextWrapping="Wrap"
+                                                Foreground="{StaticResource TextSoftBrush}" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="4" HorizontalAlignment="Center" Width="210">
+                                    <TextBlock Text="Нужен пересмотр"
+                                               FontWeight="Bold"
+                                               TextAlignment="Center"
+                                               Style="{StaticResource MutedLabelStyle}" />
+                                    <TextBlock x:Name="DashboardModernDueMetricTextBlock"
+                                                Margin="0,18,0,0"
+                                                FontSize="40"
+                                                FontWeight="Bold"
+                                                TextAlignment="Center"
+                                                Foreground="#FFFF7A88" />
+                                    <TextBlock x:Name="DashboardModernDueNoteTextBlock"
+                                                Margin="0,10,0,0"
+                                                TextAlignment="Center"
+                                                TextWrapping="Wrap"
+                                                Foreground="{StaticResource TextSoftBrush}" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="6" HorizontalAlignment="Center" Width="210">
+                                    <TextBlock Text="Скоро пересмотр"
+                                               FontWeight="Bold"
+                                               TextAlignment="Center"
+                                               Style="{StaticResource MutedLabelStyle}" />
+                                    <TextBlock x:Name="DashboardModernUpcomingMetricTextBlock"
+                                                Margin="0,18,0,0"
+                                                FontSize="40"
+                                                FontWeight="Bold"
+                                                TextAlignment="Center"
+                                                Foreground="#FFFFD08A" />
+                                    <TextBlock x:Name="DashboardModernUpcomingNoteTextBlock"
+                                                Margin="0,10,0,0"
+                                                TextAlignment="Center"
+                                                TextWrapping="Wrap"
+                                                Foreground="{StaticResource TextSoftBrush}" />
+                                </StackPanel>
+                            </Grid>
+
+                            <TextBlock Text="Главный график"
+                                       Margin="0,64,0,0"
+                                       FontSize="18"
+                                       FontWeight="Bold"
+                                       Foreground="{StaticResource TextBrush}" />
+
+                            <Grid Margin="0,28,0,0">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="18" />
+                                    <RowDefinition Height="236" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="28" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="28" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="28" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="28" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock x:Name="DashboardModernChartCount1" Grid.Row="0" Grid.Column="0" HorizontalAlignment="Center" Foreground="{StaticResource TextBrush}" />
+                                <TextBlock x:Name="DashboardModernChartCount2" Grid.Row="0" Grid.Column="2" HorizontalAlignment="Center" Foreground="{StaticResource TextBrush}" />
+                                <TextBlock x:Name="DashboardModernChartCount3" Grid.Row="0" Grid.Column="4" HorizontalAlignment="Center" Foreground="{StaticResource TextBrush}" />
+                                <TextBlock x:Name="DashboardModernChartCount4" Grid.Row="0" Grid.Column="6" HorizontalAlignment="Center" Foreground="{StaticResource TextBrush}" />
+                                <TextBlock x:Name="DashboardModernChartCount5" Grid.Row="0" Grid.Column="8" HorizontalAlignment="Center" Foreground="{StaticResource TextBrush}" />
+
+                                <Grid Grid.Row="2" Grid.ColumnSpan="9" IsHitTestVisible="False">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*" />
+                                        <RowDefinition Height="*" />
+                                        <RowDefinition Height="*" />
+                                        <RowDefinition Height="*" />
+                                    </Grid.RowDefinitions>
+                                    <Border Grid.Row="0" BorderBrush="{StaticResource ChartGridBrush}" BorderThickness="0,0,0,1" />
+                                    <Border Grid.Row="1" BorderBrush="{StaticResource ChartGridBrush}" BorderThickness="0,0,0,1" />
+                                    <Border Grid.Row="2" BorderBrush="{StaticResource ChartGridBrush}" BorderThickness="0,0,0,1" />
+                                    <Border Grid.Row="3" BorderBrush="{StaticResource ChartGridBrush}" BorderThickness="0,0,0,1" />
+                                </Grid>
+
+                                <Grid Grid.Row="2" Grid.Column="0">
+                                    <Border Width="58" HorizontalAlignment="Center" Background="{StaticResource ChartTrackBrush}" CornerRadius="16" />
+                                    <Border x:Name="DashboardModernChartBar1" Width="58" Height="0" VerticalAlignment="Bottom" HorizontalAlignment="Center" CornerRadius="16" />
+                                </Grid>
+                                <Grid Grid.Row="2" Grid.Column="2">
+                                    <Border Width="58" HorizontalAlignment="Center" Background="{StaticResource ChartTrackBrush}" CornerRadius="16" />
+                                    <Border x:Name="DashboardModernChartBar2" Width="58" Height="0" VerticalAlignment="Bottom" HorizontalAlignment="Center" CornerRadius="16" />
+                                </Grid>
+                                <Grid Grid.Row="2" Grid.Column="4">
+                                    <Border Width="58" HorizontalAlignment="Center" Background="{StaticResource ChartTrackBrush}" CornerRadius="16" />
+                                    <Border x:Name="DashboardModernChartBar3" Width="58" Height="0" VerticalAlignment="Bottom" HorizontalAlignment="Center" CornerRadius="16" />
+                                </Grid>
+                                <Grid Grid.Row="2" Grid.Column="6">
+                                    <Border Width="58" HorizontalAlignment="Center" Background="{StaticResource ChartTrackBrush}" CornerRadius="16" />
+                                    <Border x:Name="DashboardModernChartBar4" Width="58" Height="0" VerticalAlignment="Bottom" HorizontalAlignment="Center" CornerRadius="16" />
+                                </Grid>
+                                <Grid Grid.Row="2" Grid.Column="8">
+                                    <Border Width="58" HorizontalAlignment="Center" Background="{StaticResource ChartTrackBrush}" CornerRadius="16" />
+                                    <Border x:Name="DashboardModernChartBar5" Width="58" Height="0" VerticalAlignment="Bottom" HorizontalAlignment="Center" CornerRadius="16" />
+                                </Grid>
+
+                                <TextBlock x:Name="DashboardModernChartLabel1" Grid.Row="3" Grid.Column="0" Margin="0,14,0,0" TextAlignment="Center" TextWrapping="Wrap" Style="{StaticResource MutedLabelStyle}" />
+                                <TextBlock x:Name="DashboardModernChartLabel2" Grid.Row="3" Grid.Column="2" Margin="0,14,0,0" TextAlignment="Center" TextWrapping="Wrap" Style="{StaticResource MutedLabelStyle}" />
+                                <TextBlock x:Name="DashboardModernChartLabel3" Grid.Row="3" Grid.Column="4" Margin="0,14,0,0" TextAlignment="Center" TextWrapping="Wrap" Style="{StaticResource MutedLabelStyle}" />
+                                <TextBlock x:Name="DashboardModernChartLabel4" Grid.Row="3" Grid.Column="6" Margin="0,14,0,0" TextAlignment="Center" TextWrapping="Wrap" Style="{StaticResource MutedLabelStyle}" />
+                                <TextBlock x:Name="DashboardModernChartLabel5" Grid.Row="3" Grid.Column="8" Margin="0,14,0,0" TextAlignment="Center" TextWrapping="Wrap" Style="{StaticResource MutedLabelStyle}" />
+                            </Grid>
+
+                            <StackPanel Visibility="Collapsed">
+                            <UniformGrid Columns="4" Margin="0,0,0,16">
+                                <Border x:Name="DashboardDocumentsCard"
+                                        Style="{StaticResource PanelBorderStyle}"
+                                        Margin="0,0,12,0"
+                                        Padding="18,16"
+                                        Cursor="Hand"
+                                        Tag="documents"
+                                        MouseLeftButtonUp="DashboardMetricCard_MouseLeftButtonUp">
+                                    <StackPanel>
+                                        <TextBlock Text="Документы" Style="{StaticResource MutedLabelStyle}" FontWeight="Bold" />
+                                        <TextBlock x:Name="DashboardDocsMetricTextBlock" Margin="0,6,0,0" FontSize="34" FontWeight="Bold" Foreground="{StaticResource AccentBrush}" />
+                                        <TextBlock Text="Всего документов" Margin="0,4,0,0" Style="{StaticResource MutedLabelStyle}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border x:Name="DashboardMissingCard"
+                                        Style="{StaticResource PanelBorderStyle}"
+                                        Margin="0,0,12,0"
+                                        Padding="18,16"
+                                        Cursor="Hand"
+                                        Tag="missing-pdf"
+                                        MouseLeftButtonUp="DashboardMetricCard_MouseLeftButtonUp">
+                                    <StackPanel>
+                                        <TextBlock Text="Без PDF" Style="{StaticResource MutedLabelStyle}" FontWeight="Bold" />
+                                        <TextBlock x:Name="DashboardMissingMetricTextBlock" Margin="0,6,0,0" FontSize="34" FontWeight="Bold" Foreground="{StaticResource AccentBrush}" />
+                                        <TextBlock Text="Нет основного файла" Margin="0,4,0,0" Style="{StaticResource MutedLabelStyle}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border x:Name="DashboardDueCard"
+                                        Style="{StaticResource PanelBorderStyle}"
+                                        Margin="0,0,12,0"
+                                        Padding="18,16"
+                                        Cursor="Hand"
+                                        Tag="due-review"
+                                        MouseLeftButtonUp="DashboardMetricCard_MouseLeftButtonUp">
+                                    <StackPanel>
+                                        <TextBlock Text="Нужен пересмотр" Style="{StaticResource MutedLabelStyle}" FontWeight="Bold" />
+                                        <TextBlock x:Name="DashboardDueMetricTextBlock" Margin="0,6,0,0" FontSize="34" FontWeight="Bold" Foreground="{StaticResource AccentBrush}" />
+                                        <TextBlock Text="Пора обновить пересмотр" Margin="0,4,0,0" Style="{StaticResource MutedLabelStyle}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border x:Name="DashboardUpcomingCard"
+                                        Style="{StaticResource PanelBorderStyle}"
+                                        Padding="18,16"
+                                        Cursor="Hand"
+                                        Tag="upcoming-review"
+                                        MouseLeftButtonUp="DashboardMetricCard_MouseLeftButtonUp">
+                                    <StackPanel>
+                                        <TextBlock Text="Скоро" Style="{StaticResource MutedLabelStyle}" FontWeight="Bold" />
+                                        <TextBlock x:Name="DashboardUpcomingMetricTextBlock" Margin="0,6,0,0" FontSize="34" FontWeight="Bold" Foreground="{StaticResource AccentBrush}" />
+                                        <TextBlock Text="Подходит дата пересмотра" Margin="0,4,0,0" Style="{StaticResource MutedLabelStyle}" />
+                                    </StackPanel>
+                                </Border>
+                            </UniformGrid>
+
+                            <Border Style="{StaticResource PanelBorderStyle}" Padding="20">
+                                <StackPanel>
+                                    <TextBlock Text="Статистика и сводка"
+                                               FontSize="16"
+                                               FontWeight="Bold"
+                                               Foreground="{StaticResource TextBrush}" />
+                                     <Border Background="#12FFFFFF"
+                                             BorderBrush="{StaticResource StrokeBrush}"
+                                             BorderThickness="1"
+                                             CornerRadius="999"
+                                             HorizontalAlignment="Left"
+                                            Padding="12,6"
+                                            Margin="0,10,0,0">
+                                         <TextBlock x:Name="DashboardScopeTextBlock"
+                                                    TextWrapping="Wrap"
+                                                    Style="{StaticResource MutedLabelStyle}" />
+                                     </Border>
+
+                                     <Border x:Name="DashboardActionBorder"
+                                             Background="#0DFFFFFF"
+                                             BorderBrush="{StaticResource StrokeBrush}"
+                                             BorderThickness="1"
+                                             CornerRadius="18"
+                                             Padding="16"
+                                             Margin="0,16,0,0">
+                                         <StackPanel>
+                                             <TextBlock x:Name="DashboardActionTitleTextBlock"
+                                                        FontSize="15"
+                                                        FontWeight="Bold"
+                                                        Foreground="{StaticResource TextBrush}" />
+                                             <TextBlock x:Name="DashboardActionNoteTextBlock"
+                                                        Margin="0,8,0,0"
+                                                        TextWrapping="Wrap"
+                                                        Foreground="{StaticResource TextSoftBrush}" />
+                                         </StackPanel>
+                                     </Border>
+
+                                     <Grid Margin="0,16,0,0">
+                                         <Grid.ColumnDefinitions>
+                                             <ColumnDefinition Width="1.1*" />
+                                             <ColumnDefinition Width="16" />
+                                             <ColumnDefinition Width="1.4*" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <Border Background="#09FFFFFF"
+                                                BorderBrush="{StaticResource StrokeBrush}"
+                                                BorderThickness="1"
+                                                CornerRadius="20"
+                                                Padding="16">
+                                            <StackPanel>
+                                                <TextBlock Text="Состояние реестра"
+                                                           FontSize="15"
+                                                           FontWeight="Bold"
+                                                           Foreground="{StaticResource TextBrush}" />
+                                                <StackPanel x:Name="DashboardWorkspacePanel" Margin="0,14,0,0" />
+                                            </StackPanel>
+                                        </Border>
+
+                                        <Border Grid.Column="2"
+                                                Background="#09FFFFFF"
+                                                BorderBrush="{StaticResource StrokeBrush}"
+                                                BorderThickness="1"
+                                                CornerRadius="20"
+                                                Padding="16">
+                                            <StackPanel>
+                                                <TextBlock Text="Компании"
+                                                           FontSize="15"
+                                                           FontWeight="Bold"
+                                                           Foreground="{StaticResource TextBrush}" />
+                                                <WrapPanel x:Name="DashboardCompaniesPanel" Margin="0,14,0,0" />
+                                            </StackPanel>
+                                         </Border>
+                                     </Grid>
+
+                                     <Grid Margin="0,16,0,0">
+                                         <Grid.ColumnDefinitions>
+                                             <ColumnDefinition Width="*" />
+                                             <ColumnDefinition Width="16" />
+                                             <ColumnDefinition Width="*" />
+                                             <ColumnDefinition Width="16" />
+                                             <ColumnDefinition Width="*" />
+                                         </Grid.ColumnDefinitions>
+
+                                         <Border Background="#09FFFFFF"
+                                                 BorderBrush="{StaticResource StrokeBrush}"
+                                                 BorderThickness="1"
+                                                 CornerRadius="20"
+                                                 Padding="16">
+                                             <StackPanel>
+                                                 <TextBlock Text="Статусы документов"
+                                                            FontSize="15"
+                                                            FontWeight="Bold"
+                                                            Foreground="{StaticResource TextBrush}" />
+                                                 <StackPanel x:Name="DashboardStatusesPanel" Margin="0,14,0,0" />
+                                             </StackPanel>
+                                         </Border>
+
+                                         <Border Grid.Column="2"
+                                                 Background="#09FFFFFF"
+                                                 BorderBrush="{StaticResource StrokeBrush}"
+                                                 BorderThickness="1"
+                                                 CornerRadius="20"
+                                                 Padding="16">
+                                             <StackPanel>
+                                                 <TextBlock Text="Качество заполнения"
+                                                            FontSize="15"
+                                                            FontWeight="Bold"
+                                                            Foreground="{StaticResource TextBrush}" />
+                                                 <StackPanel x:Name="DashboardCoveragePanel" Margin="0,14,0,0" />
+                                             </StackPanel>
+                                         </Border>
+
+                                         <Border Grid.Column="4"
+                                                 Background="#09FFFFFF"
+                                                 BorderBrush="{StaticResource StrokeBrush}"
+                                                 BorderThickness="1"
+                                                 CornerRadius="20"
+                                                 Padding="16">
+                                             <StackPanel>
+                                                 <TextBlock Text="Ближайшие пересмотры"
+                                                            FontSize="15"
+                                                            FontWeight="Bold"
+                                                            Foreground="{StaticResource TextBrush}" />
+                                                 <StackPanel x:Name="DashboardReviewTimelinePanel" Margin="0,14,0,0" />
+                                             </StackPanel>
+                                         </Border>
+                                     </Grid>
+
+                                     <Grid Margin="0,16,0,0">
+                                         <Grid.ColumnDefinitions>
+                                             <ColumnDefinition Width="*" />
+                                             <ColumnDefinition Width="16" />
+                                             <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <Border Background="#09FFFFFF"
+                                                BorderBrush="{StaticResource StrokeBrush}"
+                                                BorderThickness="1"
+                                                CornerRadius="20"
+                                                Padding="16">
+                                            <StackPanel>
+                                                <TextBlock Text="Требует внимания"
+                                                           FontSize="15"
+                                                           FontWeight="Bold"
+                                                           Foreground="{StaticResource TextBrush}" />
+                                                <StackPanel x:Name="DashboardAttentionPanel" Margin="0,14,0,0" />
+                                            </StackPanel>
+                                        </Border>
+
+                                        <Border Grid.Column="2"
+                                                Background="#09FFFFFF"
+                                                BorderBrush="{StaticResource StrokeBrush}"
+                                                BorderThickness="1"
+                                                CornerRadius="20"
+                                                Padding="16">
+                                            <StackPanel>
+                                                <TextBlock Text="Недавние изменения"
+                                                           FontSize="15"
+                                                           FontWeight="Bold"
+                                                           Foreground="{StaticResource TextBrush}" />
+                                                <StackPanel x:Name="DashboardRecentPanel" Margin="0,14,0,0" />
+                                            </StackPanel>
+                                        </Border>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                            </StackPanel>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <Grid x:Name="AttentionPage" Visibility="Collapsed">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <Grid Margin="0,8,0,22">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="24" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="24" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border Grid.Column="0"
+                                    Background="#0BFFFFFF"
+                                    BorderBrush="#2AF58FA1"
+                                    BorderThickness="1"
+                                    CornerRadius="18"
+                                    Padding="16,14"
+                                    Cursor="Hand"
+                                    Tag="due-review"
+                                    MouseLeftButtonUp="AttentionSummaryCard_MouseLeftButtonUp">
+                                <StackPanel>
+                                    <TextBlock Text="Просрочено"
+                                               Style="{StaticResource MutedLabelStyle}"
+                                               FontWeight="Bold" />
+                                    <TextBlock x:Name="AttentionUrgentSummaryTextBlock"
+                                               Margin="0,8,0,0"
+                                               FontSize="24"
+                                               FontWeight="Bold"
+                                               Foreground="#FFF2B7C2" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Grid.Column="2"
+                                    Background="#0BFFFFFF"
+                                    BorderBrush="{StaticResource StrokeStrongBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="18"
+                                    Padding="16,14"
+                                    Cursor="Hand"
+                                    Tag="all"
+                                    MouseLeftButtonUp="AttentionSummaryCard_MouseLeftButtonUp">
+                                <StackPanel>
+                                    <TextBlock Text="Нужно поправить"
+                                               Style="{StaticResource MutedLabelStyle}"
+                                               FontWeight="Bold" />
+                                    <TextBlock x:Name="AttentionIssueSummaryTextBlock"
+                                               Margin="0,8,0,0"
+                                               FontSize="24"
+                                               FontWeight="Bold"
+                                               Foreground="{StaticResource TextBrush}" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Grid.Column="4"
+                                    Background="#0BFFFFFF"
+                                    BorderBrush="#30FFB86C"
+                                    BorderThickness="1"
+                                    CornerRadius="18"
+                                    Padding="16,14"
+                                    Cursor="Hand"
+                                    Tag="upcoming-review"
+                                    MouseLeftButtonUp="AttentionSummaryCard_MouseLeftButtonUp">
+                                <StackPanel>
+                                    <TextBlock Text="Скоро пересмотр"
+                                               Style="{StaticResource MutedLabelStyle}"
+                                               FontWeight="Bold" />
+                                    <TextBlock x:Name="AttentionRecentSummaryTextBlock"
+                                               Margin="0,8,0,0"
+                                               FontSize="24"
+                                               FontWeight="Bold"
+                                               Foreground="#FFFFD8A8" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                            <StackPanel Margin="0,6,0,0">
+                                <Border Background="#0DFFFFFF"
+                                        BorderBrush="{StaticResource StrokeBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="20"
+                                        Padding="18"
+                                        Margin="0,0,0,24">
+                                    <StackPanel>
+                                        <TextBlock x:Name="AttentionHeadlineTitleTextBlock"
+                                                   FontSize="16"
+                                                   FontWeight="Bold"
+                                                   Foreground="{StaticResource TextBrush}" />
+                                        <TextBlock x:Name="AttentionHeadlineBodyTextBlock"
+                                                   Margin="0,8,0,0"
+                                                   TextWrapping="Wrap"
+                                                   Foreground="{StaticResource TextSoftBrush}" />
+                                    </StackPanel>
+                                </Border>
+
+                                <StackPanel>
+                                    <TextBlock Text="Срочно"
+                                               FontSize="18"
+                                               FontWeight="Bold"
+                                               Foreground="{StaticResource TextBrush}" />
+                                    <TextBlock Text="Просроченный пересмотр, отсутствие PDF и другие блокирующие проблемы."
+                                               Margin="0,6,0,0"
+                                               TextWrapping="Wrap"
+                                               Style="{StaticResource MutedLabelStyle}" />
+                                    <StackPanel x:Name="AttentionUrgentPanel" Margin="0,20,0,0" />
+                                </StackPanel>
+
+                                <StackPanel Margin="0,34,0,0">
+                                    <TextBlock Text="Нужно поправить"
+                                               FontSize="18"
+                                               FontWeight="Bold"
+                                               Foreground="{StaticResource TextBrush}" />
+                                    <TextBlock Text="Документы без раздела, даты пересмотра и других важных данных."
+                                               Margin="0,6,0,0"
+                                               TextWrapping="Wrap"
+                                               Style="{StaticResource MutedLabelStyle}" />
+                                    <StackPanel x:Name="AttentionIssuePanel" Margin="0,20,0,0" />
+                                </StackPanel>
+
+                                <StackPanel Margin="0,34,0,0">
+                                    <TextBlock Text="Недавно обновлены"
+                                               FontSize="18"
+                                               FontWeight="Bold"
+                                               Foreground="{StaticResource TextBrush}" />
+                                    <TextBlock Text="Карточки, которые менялись в последние дни."
+                                               Margin="0,6,0,0"
+                                               TextWrapping="Wrap"
+                                               Style="{StaticResource MutedLabelStyle}" />
+                                    <StackPanel x:Name="AttentionRecentPanel" Margin="0,20,0,0" />
+                                </StackPanel>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Grid>
+
+                    <Grid x:Name="DocumentsPage" Visibility="Collapsed">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock x:Name="DocumentsCountTextBlock"
+                                   Style="{StaticResource MutedLabelStyle}"
+                                   Margin="0,0,0,12" />
+
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                            <StackPanel x:Name="DocumentsListPanel" />
+                        </ScrollViewer>
+                    </Grid>
+
+                    <Grid x:Name="SopdPage" Visibility="Collapsed">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock x:Name="SopdCountTextBlock"
+                                   Style="{StaticResource MutedLabelStyle}"
+                                   Margin="0,2,0,14" />
+
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                            <StackPanel x:Name="SopdListPanel" Margin="0,6,0,0" />
+                        </ScrollViewer>
+                    </Grid>
+
+                    <Grid x:Name="SettingsPage" Visibility="Collapsed">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="0" />
+                            <ColumnDefinition Width="0" />
+                        </Grid.ColumnDefinitions>
+
+                        <Border Style="{StaticResource PanelBorderStyle}" Padding="18">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="Компании" FontSize="16" FontWeight="Bold" Foreground="{StaticResource TextBrush}" />
+                                    <TextBlock x:Name="SettingsCompaniesCaptionTextBlock"
+                                               Margin="0,6,0,0"
+                                               Style="{StaticResource MutedLabelStyle}" />
+                                </StackPanel>
+                                <ListBox x:Name="SettingsCompanyListBox"
+                                         Grid.Row="1"
+                                         Margin="0,14,0,0"
+                                         SelectionChanged="SettingsCompanyListBox_SelectionChanged" />
+                                <Grid Grid.Row="2" Margin="0,14,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="10" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+
+                                    <Button Grid.Row="0" Grid.Column="0" Content="Добавить" Style="{StaticResource SoftButtonStyle}" Click="SettingsAddCompanyButton_Click" />
+                                    <Button Grid.Row="0" Grid.Column="2" Content="Переименовать" Style="{StaticResource SoftButtonStyle}" Click="SettingsRenameCompanyButton_Click" />
+                                    <Button Grid.Row="1" Grid.Column="0" Margin="0,10,0,0" Content="Копировать" Style="{StaticResource SoftButtonStyle}" Click="SettingsCopyCompanyButton_Click" />
+                                    <Button Grid.Row="1" Grid.Column="2" Margin="0,10,0,0" Content="Удалить" Style="{StaticResource DangerButtonStyle}" Click="SettingsDeleteCompanyButton_Click" />
+                                </Grid>
+                            </Grid>
+                        </Border>
+
+                        <Border Grid.Column="2" Style="{StaticResource PanelBorderStyle}" Padding="18">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="Разделы" FontSize="16" FontWeight="Bold" Foreground="{StaticResource TextBrush}" />
+                                    <TextBlock x:Name="SettingsSectionsCaptionTextBlock"
+                                               Margin="0,6,0,0"
+                                               Style="{StaticResource MutedLabelStyle}" />
+                                </StackPanel>
+                                <ListBox x:Name="SettingsSectionListBox"
+                                          Grid.Row="1"
+                                          Margin="0,14,0,0"
+                                          SelectionChanged="SettingsSectionListBox_SelectionChanged" />
+                                <Grid Grid.Row="2" Margin="0,14,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="10" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+
+                                    <Button Grid.Row="0" Grid.Column="0" Content="Добавить" Style="{StaticResource SoftButtonStyle}" Click="SettingsAddSectionButton_Click" />
+                                    <Button Grid.Row="0" Grid.Column="2" Content="Переименовать" Style="{StaticResource SoftButtonStyle}" Click="SettingsRenameSectionButton_Click" />
+                                    <Button Grid.Row="1" Grid.Column="0" Margin="0,10,0,0" Content="Удалить" Style="{StaticResource DangerButtonStyle}" Click="SettingsDeleteSectionButton_Click" />
+                                </Grid>
+                            </Grid>
+                        </Border>
+
+                        <Border Grid.Column="4" Style="{StaticResource PanelBorderStyle}" Padding="18" Visibility="Collapsed">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel>
+                                    <TextBlock Text="Сводка" FontSize="16" FontWeight="Bold" Foreground="{StaticResource TextBrush}" />
+                                    <StackPanel x:Name="SettingsSummaryPanel" Margin="0,14,0,0" />
+
+                                    <Button Content="Открыть рабочую папку"
+                                            Margin="0,16,0,0"
+                                            Style="{StaticResource SoftButtonStyle}"
+                                            Click="OpenWorkspaceFolder_Click" />
+
+                                    <TextBlock Text="Общий файл СОПД компании"
+                                               Margin="0,20,0,0"
+                                               FontSize="16"
+                                               FontWeight="Bold"
+                                               Foreground="{StaticResource TextBrush}" />
+                                    <Border x:Name="CompanySopdDropBorder"
+                                            Background="#09FFFFFF"
+                                            BorderBrush="#14C8AEFF"
+                                            BorderThickness="1"
+                                            CornerRadius="20"
+                                            Padding="16"
+                                            Margin="0,12,0,0"
+                                            Tag="company-sopd"
+                                            AllowDrop="True"
+                                            PreviewDragOver="FileDropSurface_DragOver"
+                                            Drop="FileDropSurface_Drop">
+                                        <StackPanel>
+                                            <TextBlock Text="Word / DOCX" Style="{StaticResource MutedLabelStyle}" FontWeight="Bold" />
+                                            <Border x:Name="CompanySopdTagBorder" Background="{StaticResource MissingBadgeBrush}" BorderBrush="Transparent" BorderThickness="1" CornerRadius="11" Padding="10,5" Margin="0,10,0,0" HorizontalAlignment="Left">
+                                                <TextBlock x:Name="CompanySopdTagTextBlock" Foreground="{StaticResource MutedBrush}" FontWeight="Bold" FontSize="12" />
+                                            </Border>
+                                            <TextBlock x:Name="CompanySopdCaptionTextBlock" Margin="0,10,0,0" TextWrapping="Wrap" Style="{StaticResource MutedLabelStyle}" />
+                                            <UniformGrid Columns="4" Margin="0,14,0,0">
+                                                <Button x:Name="CompanySopdUploadButton" Content="Загрузить" Style="{StaticResource SoftButtonStyle}" Margin="0,0,8,0" Click="CompanySopdUploadButton_Click" />
+                                                <Button x:Name="CompanySopdOpenButton" Content="Открыть" Style="{StaticResource SoftButtonStyle}" Margin="0,0,8,0" Click="CompanySopdOpenButton_Click" />
+                                                <Button x:Name="CompanySopdDownloadButton" Content="Скачать" Style="{StaticResource SoftButtonStyle}" Margin="0,0,8,0" Click="CompanySopdDownloadButton_Click" />
+                                                <Button x:Name="CompanySopdDeleteButton" Content="Удалить" Style="{StaticResource SoftButtonStyle}" Click="CompanySopdDeleteButton_Click" />
+                                            </UniformGrid>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Border>
+                    </Grid>
+                </Grid>
+            </Grid>
+
+            <Border x:Name="RightPanelBorder" Grid.Column="4" Style="{StaticResource PanelBorderStyle}" Padding="18">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <StackPanel>
+                        <TextBlock x:Name="RightPanelTitleTextBlock"
+                                   FontSize="18"
+                                   FontWeight="Bold"
+                                   Foreground="{StaticResource TextBrush}" />
+                        <TextBlock x:Name="RightPanelSubtitleTextBlock"
+                                   Margin="0,4,0,0"
+                                   TextWrapping="Wrap"
+                                   Visibility="Collapsed"
+                                   Style="{StaticResource MutedLabelStyle}" />
+                    </StackPanel>
+
+                    <Grid Grid.Row="1" Margin="0,18,0,0">
+                        <StackPanel x:Name="RightPlaceholderPanel" VerticalAlignment="Center">
+                            <TextBlock Text="Выберите документ слева"
+                                       FontSize="20"
+                                       FontWeight="Bold"
+                                       Foreground="{StaticResource TextBrush}" />
+                            <TextBlock Text="Карточка документа откроется здесь. Справа доступны редактирование и файлы."
+                                       Margin="0,12,0,0"
+                                       TextWrapping="Wrap"
+                                       Style="{StaticResource MutedLabelStyle}" />
+                        </StackPanel>
+
+                        <ScrollViewer x:Name="DocumentEditorScrollViewer" VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
+                            <StackPanel>
+                                <TextBlock Text="Основные данные"
+                                           FontSize="16"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource TextBrush}" />
+
+                                <Grid Margin="0,18,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="150" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Название" Style="{StaticResource MutedLabelStyle}" Margin="0,10,12,0" />
+                                    <TextBox x:Name="DocumentTitleTextBox" Grid.Row="0" Grid.Column="1" Style="{StaticResource FieldTextBoxStyle}" Margin="0,0,0,12" />
+
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Компания" Style="{StaticResource MutedLabelStyle}" Margin="0,10,12,0" />
+                                    <ComboBox x:Name="EditorCompanyComboBox" Grid.Row="1" Grid.Column="1" Style="{StaticResource FieldComboBoxStyle}" Margin="0,0,0,12" SelectionChanged="EditorCompanyComboBox_SelectionChanged" />
+
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Статус" Style="{StaticResource MutedLabelStyle}" Margin="0,10,12,0" />
+                                    <ComboBox x:Name="EditorStatusComboBox" Grid.Row="2" Grid.Column="1" Style="{StaticResource FieldComboBoxStyle}" Margin="0,0,0,12" />
+
+                                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Дата пересмотра" Style="{StaticResource MutedLabelStyle}" Margin="0,10,12,0" />
+                                    <Grid Grid.Row="3" Grid.Column="1" Margin="0,0,0,12">
+                                        <TextBox x:Name="ReviewDateTextBox" Style="{StaticResource FieldTextBoxStyle}" />
+                                        <TextBlock Text="дд.мм.гггг"
+                                                   Margin="16,0,0,0"
+                                                   VerticalAlignment="Center"
+                                                   IsHitTestVisible="False"
+                                                   Foreground="{StaticResource MutedDisabledBrush}">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Text, ElementName=ReviewDateTextBox}" Value="">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Grid>
+
+                                    <TextBlock Grid.Row="4" Grid.Column="0" Text="Дата принятия" Style="{StaticResource MutedLabelStyle}" Margin="0,10,12,0" />
+                                    <Grid Grid.Row="4" Grid.Column="1" Margin="0,0,0,12">
+                                        <TextBox x:Name="AcceptDateTextBox" Style="{StaticResource FieldTextBoxStyle}" />
+                                        <TextBlock Text="дд.мм.гггг"
+                                                   Margin="16,0,0,0"
+                                                   VerticalAlignment="Center"
+                                                   IsHitTestVisible="False"
+                                                   Foreground="{StaticResource MutedDisabledBrush}">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Text, ElementName=AcceptDateTextBox}" Value="">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Grid>
+
+                                    <TextBlock Grid.Row="5" Grid.Column="0" Text="Разделы" Style="{StaticResource MutedLabelStyle}" Margin="0,10,12,0" />
+                                    <Border Grid.Row="5" Grid.Column="1" Background="#0DFFFFFF" BorderBrush="#1AC8AEFF" BorderThickness="1" CornerRadius="14" Margin="0,0,0,12">
+                                        <ScrollViewer MaxHeight="140" VerticalScrollBarVisibility="Auto">
+                                            <StackPanel x:Name="SectionsPanel" Margin="12" />
+                                        </ScrollViewer>
+                                    </Border>
+
+                                    <TextBlock Grid.Row="6" Grid.Column="0" Text="Комментарий" Style="{StaticResource MutedLabelStyle}" Margin="0,10,12,0" />
+                                    <TextBox x:Name="CommentTextBox"
+                                             Grid.Row="6"
+                                             Grid.Column="1"
+                                             Style="{StaticResource FieldTextBoxStyle}"
+                                             Height="92"
+                                             TextWrapping="Wrap"
+                                             AcceptsReturn="True"
+                                             VerticalContentAlignment="Top"
+                                             Margin="0,0,0,12" />
+                                </Grid>
+
+                                <TextBlock Text="Файлы"
+                                           Margin="0,24,0,0"
+                                           FontSize="16"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource TextBrush}" />
+
+                                <Border x:Name="PdfDropBorder"
+                                        Background="#09FFFFFF"
+                                        BorderBrush="#14C8AEFF"
+                                        BorderThickness="1"
+                                        CornerRadius="20"
+                                        Padding="16"
+                                        Margin="0,18,0,0"
+                                        Tag="pdf"
+                                        AllowDrop="True"
+                                        PreviewDragOver="FileDropSurface_DragOver"
+                                        Drop="FileDropSurface_Drop">
+                                    <StackPanel>
+                                        <TextBlock Text="PDF" Style="{StaticResource MutedLabelStyle}" FontWeight="Bold" />
+                                        <Border x:Name="PdfTagBorder" Background="{StaticResource MissingBadgeBrush}" BorderBrush="Transparent" BorderThickness="1" CornerRadius="11" Padding="10,5" Margin="0,10,0,0" HorizontalAlignment="Left">
+                                            <TextBlock x:Name="PdfTagTextBlock" Foreground="{StaticResource MutedBrush}" FontWeight="Bold" FontSize="12" />
+                                        </Border>
+                                        <TextBlock x:Name="PdfCaptionTextBlock" Margin="0,10,0,0" TextWrapping="Wrap" Style="{StaticResource MutedLabelStyle}" />
+                                        <UniformGrid Columns="4" Margin="0,14,0,0">
+                                            <Button x:Name="PdfUploadButton" Content="Заменить" Style="{StaticResource SoftButtonStyle}" Margin="0,0,8,0" Click="PdfUploadButton_Click" />
+                                            <Button x:Name="PdfOpenButton" Content="Открыть" Style="{StaticResource SoftButtonStyle}" Margin="0,0,8,0" Click="PdfOpenButton_Click" />
+                                            <Button x:Name="PdfDownloadButton" Content="Скачать" Style="{StaticResource SoftButtonStyle}" Margin="0,0,8,0" Click="PdfDownloadButton_Click" />
+                                            <Button x:Name="PdfDeleteButton" Content="Удалить" Style="{StaticResource SoftButtonStyle}" Click="PdfDeleteButton_Click" />
+                                        </UniformGrid>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border x:Name="OfficeDropBorder"
+                                        Background="#09FFFFFF"
+                                        BorderBrush="#14C8AEFF"
+                                        BorderThickness="1"
+                                        CornerRadius="20"
+                                        Padding="16"
+                                        Margin="0,14,0,0"
+                                        Tag="office"
+                                        AllowDrop="True"
+                                        PreviewDragOver="FileDropSurface_DragOver"
+                                        Drop="FileDropSurface_Drop">
+                                    <StackPanel>
+                                        <TextBlock Text="Word / Excel" Style="{StaticResource MutedLabelStyle}" FontWeight="Bold" />
+                                        <Border x:Name="OfficeTagBorder" Background="{StaticResource MissingBadgeBrush}" BorderBrush="Transparent" BorderThickness="1" CornerRadius="11" Padding="10,5" Margin="0,10,0,0" HorizontalAlignment="Left">
+                                            <TextBlock x:Name="OfficeTagTextBlock" Foreground="{StaticResource MutedBrush}" FontWeight="Bold" FontSize="12" />
+                                        </Border>
+                                        <TextBlock x:Name="OfficeCaptionTextBlock" Margin="0,10,0,0" TextWrapping="Wrap" Style="{StaticResource MutedLabelStyle}" />
+                                        <UniformGrid Columns="4" Margin="0,14,0,0">
+                                            <Button x:Name="OfficeUploadButton" Content="Заменить" Style="{StaticResource SoftButtonStyle}" Margin="0,0,8,0" Click="OfficeUploadButton_Click" />
+                                            <Button x:Name="OfficeOpenButton" Content="Открыть" Style="{StaticResource SoftButtonStyle}" Margin="0,0,8,0" Click="OfficeOpenButton_Click" />
+                                            <Button x:Name="OfficeDownloadButton" Content="Скачать" Style="{StaticResource SoftButtonStyle}" Margin="0,0,8,0" Click="OfficeDownloadButton_Click" />
+                                            <Button x:Name="OfficeDeleteButton" Content="Удалить" Style="{StaticResource SoftButtonStyle}" Click="OfficeDeleteButton_Click" />
+                                        </UniformGrid>
+                                    </StackPanel>
+                                </Border>
+
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <ScrollViewer x:Name="SopdEditorScrollViewer" VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
+                            <StackPanel>
+                                <TextBlock Text="Основные данные"
+                                           FontSize="16"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource TextBrush}" />
+
+                                <Grid Margin="0,18,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="150" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Компания" Style="{StaticResource MutedLabelStyle}" Margin="0,10,12,0" />
+                                    <ComboBox x:Name="SopdCompanyComboBox" Grid.Row="0" Grid.Column="1" Style="{StaticResource FieldComboBoxStyle}" Margin="0,0,0,12" />
+
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Название" Style="{StaticResource MutedLabelStyle}" Margin="0,10,12,0" />
+                                    <TextBox x:Name="SopdTitleTextBox" Grid.Row="1" Grid.Column="1" Style="{StaticResource FieldTextBoxStyle}" Margin="0,0,0,12" />
+
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Передача 3-м лицам" Style="{StaticResource MutedLabelStyle}" Margin="0,10,12,0" />
+                                    <ComboBox x:Name="SopdTransferComboBox" Grid.Row="2" Grid.Column="1" Style="{StaticResource FieldComboBoxStyle}" Margin="0,0,0,12" />
+
+                                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Срок действия" Style="{StaticResource MutedLabelStyle}" Margin="0,10,12,0" />
+                                    <TextBox x:Name="SopdValidityTextBox" Grid.Row="3" Grid.Column="1" Style="{StaticResource FieldTextBoxStyle}" Margin="0,0,0,12" />
+                                </Grid>
+
+                                <TextBlock Text="Цель обработки" Margin="0,8,0,0" FontWeight="Bold" Foreground="{StaticResource TextBrush}" />
+                                <TextBox x:Name="SopdPurposeTextBox" Margin="0,8,0,0" Height="88" Style="{StaticResource FieldTextBoxStyle}" AcceptsReturn="True" TextWrapping="Wrap" VerticalContentAlignment="Top" />
+
+                                <TextBlock Text="Правовое основание" Margin="0,16,0,0" FontWeight="Bold" Foreground="{StaticResource TextBrush}" />
+                                <TextBox x:Name="SopdLegalBasisTextBox" Margin="0,8,0,0" Height="88" Style="{StaticResource FieldTextBoxStyle}" AcceptsReturn="True" TextWrapping="Wrap" VerticalContentAlignment="Top" />
+
+                                <TextBlock Text="Категории данных" Margin="0,16,0,0" FontWeight="Bold" Foreground="{StaticResource TextBrush}" />
+                                <TextBox x:Name="SopdCategoriesTextBox" Margin="0,8,0,0" Height="72" Style="{StaticResource FieldTextBoxStyle}" AcceptsReturn="True" TextWrapping="Wrap" VerticalContentAlignment="Top" />
+
+                                <TextBlock Text="Перечень данных" Margin="0,16,0,0" FontWeight="Bold" Foreground="{StaticResource TextBrush}" />
+                                <TextBox x:Name="SopdPdListTextBox" Margin="0,8,0,0" Height="88" Style="{StaticResource FieldTextBoxStyle}" AcceptsReturn="True" TextWrapping="Wrap" VerticalContentAlignment="Top" />
+
+                                <TextBlock Text="Субъекты данных" Margin="0,16,0,0" FontWeight="Bold" Foreground="{StaticResource TextBrush}" />
+                                <TextBox x:Name="SopdSubjectsTextBox" Margin="0,8,0,0" Height="72" Style="{StaticResource FieldTextBoxStyle}" AcceptsReturn="True" TextWrapping="Wrap" VerticalContentAlignment="Top" />
+
+                                <TextBlock Text="Операции обработки" Margin="0,16,0,0" FontWeight="Bold" Foreground="{StaticResource TextBrush}" />
+                                <TextBox x:Name="SopdOperationsTextBox" Margin="0,8,0,0" Height="88" Style="{StaticResource FieldTextBoxStyle}" AcceptsReturn="True" TextWrapping="Wrap" VerticalContentAlignment="Top" />
+
+                                <TextBlock Text="Способ обработки" Margin="0,16,0,0" FontWeight="Bold" Foreground="{StaticResource TextBrush}" />
+                                <TextBox x:Name="SopdMethodTextBox" Margin="0,8,0,0" Height="72" Style="{StaticResource FieldTextBoxStyle}" AcceptsReturn="True" TextWrapping="Wrap" VerticalContentAlignment="Top" />
+
+                                <TextBlock Text="Кому передаются данные" Margin="0,16,0,0" FontWeight="Bold" Foreground="{StaticResource TextBrush}" />
+                                <TextBox x:Name="SopdTransferToTextBox" Margin="0,8,0,0" Height="72" Style="{StaticResource FieldTextBoxStyle}" AcceptsReturn="True" TextWrapping="Wrap" VerticalContentAlignment="Top" />
+
+                                <TextBlock Text="Описание" Margin="0,16,0,0" FontWeight="Bold" Foreground="{StaticResource TextBrush}" />
+                                <TextBox x:Name="SopdDescriptionTextBox" Margin="0,8,0,0" Height="96" Style="{StaticResource FieldTextBoxStyle}" AcceptsReturn="True" TextWrapping="Wrap" VerticalContentAlignment="Top" />
+
+                                <TextBlock Text="Файл СОПД"
+                                           Margin="0,20,0,0"
+                                           FontSize="16"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource TextBrush}" />
+                                <Border x:Name="SopdFileDropBorder"
+                                        Background="#09FFFFFF"
+                                        BorderBrush="#14C8AEFF"
+                                        BorderThickness="1"
+                                        CornerRadius="20"
+                                        Padding="16"
+                                        Margin="0,12,0,0"
+                                        Tag="sopd"
+                                        AllowDrop="True"
+                                        PreviewDragOver="FileDropSurface_DragOver"
+                                        Drop="FileDropSurface_Drop">
+                                    <StackPanel>
+                                        <TextBlock Text="Word / DOCX" Style="{StaticResource MutedLabelStyle}" FontWeight="Bold" />
+                                        <Border x:Name="SopdFileTagBorder" Background="{StaticResource MissingBadgeBrush}" BorderBrush="Transparent" BorderThickness="1" CornerRadius="11" Padding="10,5" Margin="0,10,0,0" HorizontalAlignment="Left">
+                                            <TextBlock x:Name="SopdFileTagTextBlock" Foreground="{StaticResource MutedBrush}" FontWeight="Bold" FontSize="12" />
+                                        </Border>
+                                        <TextBlock x:Name="SopdFileCaptionTextBlock" Margin="0,10,0,0" TextWrapping="Wrap" Style="{StaticResource MutedLabelStyle}" />
+                                        <UniformGrid Columns="4" Margin="0,14,0,0">
+                                            <Button x:Name="SopdFileUploadButton" Content="Загрузить" Style="{StaticResource SoftButtonStyle}" Margin="0,0,8,0" Click="SopdFileUploadButton_Click" />
+                                            <Button x:Name="SopdFileOpenButton" Content="Открыть" Style="{StaticResource SoftButtonStyle}" Margin="0,0,8,0" Click="SopdFileOpenButton_Click" />
+                                            <Button x:Name="SopdFileDownloadButton" Content="Скачать" Style="{StaticResource SoftButtonStyle}" Margin="0,0,8,0" Click="SopdFileDownloadButton_Click" />
+                                            <Button x:Name="SopdFileDeleteButton" Content="Удалить" Style="{StaticResource SoftButtonStyle}" Click="SopdFileDeleteButton_Click" />
+                                        </UniformGrid>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Grid>
+
+                    <StackPanel x:Name="DocumentActionsPanel" Grid.Row="2" Margin="0,18,0,0">
+                        <Button x:Name="SaveDocumentButton"
+                                Content="Сохранить документ"
+                                Style="{StaticResource SolidButtonStyle}"
+                                Click="SaveDocumentButton_Click" />
+                        <Button x:Name="DeleteDocumentButton"
+                                Content="Удалить документ"
+                                Style="{StaticResource DangerButtonStyle}"
+                                Margin="0,12,0,0"
+                                Click="DeleteDocumentButton_Click" />
+                    </StackPanel>
+
+                    <StackPanel x:Name="SopdActionsPanel" Grid.Row="2" Margin="0,18,0,0" Visibility="Collapsed">
+                        <Button x:Name="SaveSopdButton"
+                                Content="Сохранить карточку"
+                                Style="{StaticResource SolidButtonStyle}"
+                                Click="SaveSopdButton_Click" />
+                        <Button x:Name="DeleteSopdButton"
+                                Content="Удалить карточку"
+                                Style="{StaticResource DangerButtonStyle}"
+                                Margin="0,12,0,0"
+                                Click="DeleteSopdButton_Click" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+    </DockPanel>
+</Window>
